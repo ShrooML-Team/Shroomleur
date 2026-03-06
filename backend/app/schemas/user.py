@@ -75,6 +75,13 @@ class GoogleLoginRequest(BaseModel):
     """Schéma pour la requête Google OAuth"""
     code: str
     redirect_uri: Optional[str] = None
+    platform: str = "web"  # "web" ou "android"
+
+
+class GoogleTokenRequest(BaseModel):
+    """Schéma pour la requête Google ID Token (Android Google Sign-In)"""
+    idToken: str
+    platform: str = "android"
 
 
 class GoogleLoginResponse(BaseModel):
