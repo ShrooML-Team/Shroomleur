@@ -1,0 +1,36 @@
+# Shroomleur API - Python Dependencies
+# Generated from pyproject.toml
+
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Database
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+alembic==1.12.1
+
+# Data Validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+pydantic[email]==2.5.0
+
+# Security & JWT
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Authentication
+google-auth==2.25.2
+google-auth-oauthlib==1.1.0
+google-auth-httplib2==0.2.0
+
+# Utilities
+python-dotenv==1.0.0
+requests==2.31.0
+
+# Development
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.1
+ruff==0.1.8
+mypy==1.7.1

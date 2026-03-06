@@ -1,0 +1,5 @@
+from .routes.auth import router as auth_router
+from .routes.users import router as users_router
+from .routes.history import router as history_router
+
+__all__ = ["auth_router", "users_router", "history_router"]

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Service PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: shroomleur-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-shroomleur}
+      POSTGRES_USER: ${POSTGRES_USER:-shroomleur}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shroomleur}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shroomleur}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shroomleur-network
+
+  # Service FastAPI Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shroomleur-api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-shroomleur}:${POSTGRES_PASSWORD:-shroomleur}@db:5432/${POSTGRES_DB:-shroomleur}
+      DEBUG: ${DEBUG:-false}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/google/callback}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000", "http://localhost:8000"]}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    networks:
+      - shroomleur-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+volumes:
+  postgres_data:
+
+networks:
+  shroomleur-network:
+    driver: bridge
