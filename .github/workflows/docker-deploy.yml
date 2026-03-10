@@ -157,6 +157,9 @@ jobs:
             contents: write
 
         steps:
+            - name: Set lowercase repository name
+              run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v1
               with:
@@ -166,8 +169,8 @@ jobs:
 
                       📦 **Image Docker disponible :**
                       ```bash
-                      docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-                      docker pull ghcr.io/${{ github.repository }}:latest
+                      docker pull ghcr.io/${{ env.REPO_LOWER }}:${{ github.ref_name }}
+                      docker pull ghcr.io/${{ env.REPO_LOWER }}:latest
                       ```
 
                       🔄 **Changements inclus dans cette version :**
