@@ -40,6 +40,20 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     # Vérifier que l'email n'existe pas déjà
     existing_email = db.query(User).filter(User.email == user_data.email).first()
     if existing_email:
+        # Si le compte existe mais a été créé via Google (pas de mot de passe),
+        # on lui ajoute le mot de passe pour lier les deux méthodes de connexion
+        if existing_email.google_id and not existing_email.mot_de_passe:
+            existing_email.mot_de_passe = hash_password(user_data.mot_de_passe)
+            if user_data.champignon_prefere:
+                existing_email.champignon_prefere = user_data.champignon_prefere
+            db.commit()
+            db.refresh(existing_email)
+            access_token = create_access_token(data={"sub": str(existing_email.id)})
+            return TokenResponse(
+                access_token=access_token,
+                token_type="bearer",
+                user=UserResponse.model_validate(existing_email),
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email déjà utilisé",
@@ -57,7 +71,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(user)
 
     # Générer un token d'accès
-    access_token = create_access_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
 
     return TokenResponse(
         access_token=access_token,
@@ -74,6 +88,11 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.identifiant == credentials.identifiant).first()
 
     if not user or not user.mot_de_passe:
+        if user and user.google_id and not user.mot_de_passe:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Ce compte utilise uniquement Google. Connectez-vous via Google ou inscrivez-vous avec votre email pour ajouter un mot de passe.",
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Identifiant ou mot de passe incorrect",
@@ -92,7 +111,7 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
         )
 
     # Générer un token d'accès
-    access_token = create_access_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
 
     return TokenResponse(
         access_token=access_token,
@@ -189,7 +208,7 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
             )
 
         # Générer un token d'accès
-        jwt_token = create_access_token(data={"sub": user.id})
+        jwt_token = create_access_token(data={"sub": str(user.id)})
 
         return TokenResponse(
             access_token=jwt_token,
@@ -215,7 +234,7 @@ def refresh_token(current_user: User = Depends(get_current_user)):
     Rafraîchir le token d'accès
     """
     # Générer un nouveau token
-    access_token = create_access_token(data={"sub": current_user.id})
+    access_token = create_access_token(data={"sub": str(current_user.id)})
 
     return TokenResponse(
         access_token=access_token,
@@ -348,7 +367,7 @@ def google_idtoken_login(request: GoogleTokenRequest, db: Session = Depends(get_
             )
 
         # Générer un token d'accès
-        jwt_token = create_access_token(data={"sub": user.id})
+        jwt_token = create_access_token(data={"sub": str(user.id)})
 
         return TokenResponse(
             access_token=jwt_token,

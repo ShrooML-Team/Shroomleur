@@ -6,28 +6,17 @@ from passlib.context import CryptContext
 
 from .config import settings
 
-# Configuration du contexte de hachage (bcrypt)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Configuration du contexte de hachage (argon2)
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
-    """Hacher un mot de passe"""
-    # bcrypt ne supporte que 72 bytes maximum (limiter correctement)
-    password_bytes = password.encode('utf-8')
-    if len(password_bytes) > 72:
-        # Tronquer les bytes, pas les caractères
-        password_bytes = password_bytes[:72]
-        password = password_bytes.decode('utf-8', errors='ignore')
+    """Hacher un mot de passe avec Argon2"""
     return pwd_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Vérifier un mot de passe contre un hash"""
-    # bcrypt ne supporte que 72 bytes maximum (limiter correctement)
-    password_bytes = plain_password.encode('utf-8')
-    if len(password_bytes) > 72:
-        password_bytes = password_bytes[:72]
-        plain_password = password_bytes.decode('utf-8', errors='ignore')
+    """Vérifier un mot de passe contre un hash Argon2"""
     return pwd_context.verify(plain_password, hashed_password)
 
 
