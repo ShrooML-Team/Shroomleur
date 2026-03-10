@@ -23,6 +23,7 @@ services:
 
   # Service FastAPI Application
   app:
+    image: ${APP_IMAGE:-shroomleur-app}:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile
