@@ -23,6 +23,7 @@ class UserUpdate(BaseModel):
     description: Optional[str] = None
     champignon_prefere: Optional[str] = None
     photo_profil: Optional[str] = None
+    scoring: Optional[float] = None
 
 
 class UserPhotoUploadResponse(BaseModel):

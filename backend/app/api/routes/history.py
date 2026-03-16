@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime
 
+from ...core.leveling import calculate_level_from_score
 from ...database import get_db
 from ...dependencies import get_current_user
 from ...models.user import User
@@ -50,8 +51,8 @@ def create_identification(
     else:
         current_user.streak = 0
 
-    # Mettre à jour le niveau (basé sur le scoring: 1 niveau tous les 100 points)
-    current_user.niveau = max(1, int(current_user.scoring / 100) + 1)
+    # Mettre à jour automatiquement le niveau avec des seuils progressifs.
+    current_user.niveau = calculate_level_from_score(current_user.scoring)
 
     db.commit()
     db.refresh(history_entry)
@@ -148,8 +149,8 @@ def delete_identification(
     # Soustraire le score
     current_user.scoring = max(0, current_user.scoring - history_entry.score)
 
-    # Recalculer le niveau
-    current_user.niveau = max(1, int(current_user.scoring / 100) + 1)
+    # Recalculer automatiquement le niveau avec des seuils progressifs.
+    current_user.niveau = calculate_level_from_score(current_user.scoring)
 
     # Supprimer l'entrée
     db.delete(history_entry)

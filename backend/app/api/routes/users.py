@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from ...core.config import settings
+from ...core.leveling import calculate_level_from_score
 from ...database import get_db
 from ...dependencies import get_current_user
 from ...models.user import User, UserItem
@@ -83,7 +84,7 @@ def update_current_user_profile(
     """
     Mettre à jour le profil de l'utilisateur connecté
     
-    Peut mettre à jour: email, description, champignon_prefere, photo_profil
+    Peut mettre à jour: email, description, champignon_prefere, photo_profil, scoring
     """
     if user_update.email is not None:
         existing_user = (
@@ -108,6 +109,10 @@ def update_current_user_profile(
 
     if user_update.photo_profil is not None:
         current_user.photo_profil = user_update.photo_profil
+
+    if user_update.scoring is not None:
+        current_user.scoring = max(0, user_update.scoring)
+        current_user.niveau = calculate_level_from_score(current_user.scoring)
 
     db.commit()
     db.refresh(current_user)
