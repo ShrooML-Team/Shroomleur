@@ -19,6 +19,7 @@ class UserLogin(BaseModel):
 
 class UserUpdate(BaseModel):
     """Schéma pour mettre à jour le profil utilisateur"""
+    email: Optional[EmailStr] = None
     description: Optional[str] = None
     champignon_prefere: Optional[str] = None
     photo_profil: Optional[str] = None

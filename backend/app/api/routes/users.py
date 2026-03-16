@@ -31,8 +31,23 @@ def update_current_user_profile(
     """
     Mettre à jour le profil de l'utilisateur connecté
     
-    Peut mettre à jour: description, champignon_prefere, photo_profil
+    Peut mettre à jour: email, description, champignon_prefere, photo_profil
     """
+    if user_update.email is not None:
+        existing_user = (
+            db.query(User)
+            .filter(User.email == user_update.email, User.id != current_user.id)
+            .first()
+        )
+
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email déjà utilisé",
+            )
+
+        current_user.email = user_update.email
+
     if user_update.description is not None:
         current_user.description = user_update.description
 

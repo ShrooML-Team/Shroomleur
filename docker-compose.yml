@@ -38,6 +38,8 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000", "http://localhost:8000"]}
     ports:
       - "${APP_PORT:-8000}:8000"
+    volumes:
+      - shroomleur_uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -47,6 +49,7 @@ services:
 
 volumes:
   postgres_data:
+  shroomleur_uploads:
 
 networks:
   shroomleur-network:
