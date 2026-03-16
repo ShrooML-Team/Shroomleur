@@ -1,10 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from pathlib import Path
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
+from ...core.config import settings
 from ...database import get_db
 from ...dependencies import get_current_user
 from ...models.user import User, UserItem
 from ...schemas.user import (
+    UserPhotoUploadResponse,
     UserResponse,
     UserUpdate,
     UserPublicResponse,
@@ -12,6 +18,52 @@ from ...schemas.user import (
 )
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+PROFILE_PHOTO_ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+PROFILE_PHOTO_ALLOWED_CONTENT_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+PROFILE_PHOTO_MAX_SIZE_BYTES = 5 * 1024 * 1024
+
+
+def _profile_photo_directory() -> Path:
+    return Path(settings.UPLOAD_DIR) / settings.PROFILE_PHOTO_SUBDIR
+
+
+def _extract_relative_upload_path(photo_url: str | None) -> str | None:
+    if not photo_url:
+        return None
+
+    marker = f"/{settings.PROFILE_PHOTO_SUBDIR}/"
+    uploads_marker = "/uploads"
+    uploads_index = photo_url.find(uploads_marker)
+
+    if uploads_index == -1:
+        return None
+
+    relative_path = photo_url[uploads_index + len("/uploads/"):]
+    if marker.strip("/") not in relative_path:
+        return None
+
+    return relative_path
+
+
+def _delete_previous_profile_photo(photo_url: str | None) -> None:
+    relative_path = _extract_relative_upload_path(photo_url)
+    if not relative_path:
+        return
+
+    file_path = Path(settings.UPLOAD_DIR) / relative_path
+    try:
+        file_path.resolve().relative_to(Path(settings.UPLOAD_DIR).resolve())
+    except ValueError:
+        return
+
+    if file_path.exists():
+        file_path.unlink()
 
 
 @router.get("/me", response_model=UserResponse)
@@ -61,6 +113,84 @@ def update_current_user_profile(
     db.refresh(current_user)
 
     return UserResponse.model_validate(current_user)
+
+
+@router.post("/me/photo", response_model=UserPhotoUploadResponse)
+async def upload_current_user_profile_photo(
+    request: Request,
+    photo: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Uploader une nouvelle photo de profil pour l'utilisateur connecté."""
+    if photo.content_type not in PROFILE_PHOTO_ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Format d'image non supporté",
+        )
+
+    extension = PROFILE_PHOTO_ALLOWED_CONTENT_TYPES[photo.content_type]
+    if extension not in PROFILE_PHOTO_ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Extension d'image non supportée",
+        )
+
+    content = await photo.read()
+    if not content:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Fichier image vide",
+        )
+
+    if len(content) > PROFILE_PHOTO_MAX_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image trop volumineuse (5 Mo max)",
+        )
+
+    profile_photo_dir = _profile_photo_directory()
+    profile_photo_dir.mkdir(parents=True, exist_ok=True)
+
+    filename = f"user_{current_user.id}_{uuid4().hex}{extension}"
+    file_path = profile_photo_dir / filename
+    file_path.write_bytes(content)
+
+    _delete_previous_profile_photo(current_user.photo_profil)
+
+    relative_path = f"{settings.PROFILE_PHOTO_SUBDIR}/{filename}"
+    photo_url = str(request.base_url).rstrip("/") + f"/uploads/{relative_path}"
+
+    current_user.photo_profil = photo_url
+    db.commit()
+    db.refresh(current_user)
+
+    return UserPhotoUploadResponse(photo_profil=photo_url)
+
+
+@router.get("/me/photo/download")
+def download_current_user_profile_photo(
+    current_user: User = Depends(get_current_user),
+):
+    """Télécharger la photo de profil courante de l'utilisateur connecté."""
+    if not current_user.photo_profil:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Aucune photo de profil enregistrée",
+        )
+
+    relative_path = _extract_relative_upload_path(current_user.photo_profil)
+    if not relative_path:
+        return RedirectResponse(current_user.photo_profil)
+
+    file_path = Path(settings.UPLOAD_DIR) / relative_path
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Fichier photo introuvable",
+        )
+
+    return FileResponse(file_path, filename=file_path.name)
 
 
 @router.get("/{user_id}", response_model=UserPublicResponse)

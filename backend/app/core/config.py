@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -30,6 +31,10 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: list = ["http://localhost:3000", "http://localhost:8000"]
+
+    # Uploads
+    UPLOAD_DIR: str = str(Path("/app/uploads"))
+    PROFILE_PHOTO_SUBDIR: str = "profiles"
 
     class Config:
         env_file = ".env"

@@ -25,6 +25,11 @@ class UserUpdate(BaseModel):
     photo_profil: Optional[str] = None
 
 
+class UserPhotoUploadResponse(BaseModel):
+    """Réponse après upload de la photo de profil"""
+    photo_profil: str
+
+
 class UserItemResponse(BaseModel):
     """Schéma pour les items du joueur"""
     id: int

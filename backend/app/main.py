@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from .core.config import settings
 from .database import init_db
@@ -14,6 +16,9 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     print(f"🚀 Démarrage de {settings.APP_NAME} v{settings.APP_VERSION}")
+    upload_root = Path(settings.UPLOAD_DIR)
+    upload_root.mkdir(parents=True, exist_ok=True)
+    (upload_root / settings.PROFILE_PHOTO_SUBDIR).mkdir(parents=True, exist_ok=True)
     init_db()
     print("✅ Base de données initialisée")
     
@@ -39,6 +44,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 # Inclure les routes
 app.include_router(auth_router)

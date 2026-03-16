@@ -17,6 +17,9 @@ RUN pip install --no-cache-dir -e .
 # Copier le code source
 COPY backend/ .
 
+# Préparer le répertoire d'uploads
+RUN mkdir -p /app/uploads/profiles
+
 # Créer un utilisateur non-root
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser

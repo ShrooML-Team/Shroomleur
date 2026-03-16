@@ -36,6 +36,8 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8000/auth/google/callback}
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000", "http://localhost:8000"]}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      PROFILE_PHOTO_SUBDIR: ${PROFILE_PHOTO_SUBDIR:-profiles}
     ports:
       - "${APP_PORT:-8000}:8000"
     volumes:
