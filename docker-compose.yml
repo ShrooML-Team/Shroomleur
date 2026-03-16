@@ -38,6 +38,7 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:3000", "http://localhost:8000"]}
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
       PROFILE_PHOTO_SUBDIR: ${PROFILE_PHOTO_SUBDIR:-profiles}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
     ports:
       - "${APP_PORT:-8000}:8000"
     volumes:

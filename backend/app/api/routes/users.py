@@ -164,7 +164,8 @@ async def upload_current_user_profile_photo(
     _delete_previous_profile_photo(current_user.photo_profil)
 
     relative_path = f"{settings.PROFILE_PHOTO_SUBDIR}/{filename}"
-    photo_url = str(request.base_url).rstrip("/") + f"/uploads/{relative_path}"
+    base_url = settings.PUBLIC_BASE_URL.rstrip("/") if settings.PUBLIC_BASE_URL else str(request.base_url).rstrip("/")
+    photo_url = base_url + f"/uploads/{relative_path}"
 
     current_user.photo_profil = photo_url
     db.commit()

@@ -4,14 +4,14 @@ from pathlib import Path
 
 
 class Settings(BaseSettings):
-    """Configuration de l'application"""
+    """Configuration de l application"""
 
     # Application
     APP_NAME: str = "Shroomleur API"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
 
-    # Base de données
+    # Base de donnees
     DATABASE_URL: str = "postgresql://shroomleur:shroomleur@localhost:5432/shroomleur"
     DATABASE_ECHO: bool = False
 
@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     # Uploads
     UPLOAD_DIR: str = str(Path("/app/uploads"))
     PROFILE_PHOTO_SUBDIR: str = "profiles"
+    # URL publique de base pour construire les URLs des photos uploadees.
+    # Ex: "https://shroomleur.shrooml.duckdns.org"
+    # A definir si le serveur est derriere un reverse proxy (Nginx, Cloudflare, Caddy...).
+    # Sans cette valeur, request.base_url peut retourner une URL http:// interne bloquee par Android 9+.
+    PUBLIC_BASE_URL: str = ""
 
     class Config:
         env_file = ".env"
