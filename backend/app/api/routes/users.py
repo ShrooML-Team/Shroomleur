@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import FileResponse, RedirectResponse
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ...core.config import settings
@@ -28,6 +29,21 @@ PROFILE_PHOTO_ALLOWED_CONTENT_TYPES = {
     "image/webp": ".webp",
 }
 PROFILE_PHOTO_MAX_SIZE_BYTES = 5 * 1024 * 1024
+
+
+def _calculate_user_rank(db: Session, user_score: float) -> int:
+    higher_scores_count = db.query(func.count(User.id)).filter(User.scoring > user_score).scalar() or 0
+    return int(higher_scores_count) + 1
+
+
+def _build_user_response(db: Session, user: User) -> UserResponse:
+    user_response = UserResponse.model_validate(user)
+    return user_response.model_copy(update={"rang": _calculate_user_rank(db, user.scoring)})
+
+
+def _build_user_public_response(db: Session, user: User) -> UserPublicResponse:
+    user_response = UserPublicResponse.model_validate(user)
+    return user_response.model_copy(update={"rang": _calculate_user_rank(db, user.scoring)})
 
 
 def _profile_photo_directory() -> Path:
@@ -68,11 +84,14 @@ def _delete_previous_profile_photo(photo_url: str | None) -> None:
 
 
 @router.get("/me", response_model=UserResponse)
-def get_current_user_profile(current_user: User = Depends(get_current_user)):
+def get_current_user_profile(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Obtenir le profil de l'utilisateur connecté
     """
-    return UserResponse.model_validate(current_user)
+    return _build_user_response(db, current_user)
 
 
 @router.put("/me", response_model=UserResponse)
@@ -117,7 +136,7 @@ def update_current_user_profile(
     db.commit()
     db.refresh(current_user)
 
-    return UserResponse.model_validate(current_user)
+    return _build_user_response(db, current_user)
 
 
 @router.post("/me/photo", response_model=UserPhotoUploadResponse)
@@ -212,7 +231,7 @@ def get_user_public_profile(user_id: int, db: Session = Depends(get_db)):
             detail="Utilisateur non trouvé",
         )
 
-    return UserPublicResponse.model_validate(user)
+    return _build_user_public_response(db, user)
 
 
 @router.get("/me/items", response_model=list[UserItemResponse])

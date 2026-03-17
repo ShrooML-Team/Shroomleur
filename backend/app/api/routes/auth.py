@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 import requests
@@ -22,6 +23,13 @@ from ...schemas.user import (
 )
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
+
+
+def _build_user_response(db: Session, user: User) -> UserResponse:
+    higher_scores_count = db.query(func.count(User.id)).filter(User.scoring > user.scoring).scalar() or 0
+    rank = int(higher_scores_count) + 1
+    user_response = UserResponse.model_validate(user)
+    return user_response.model_copy(update={"rang": rank})
 
 
 @router.post("/register", response_model=TokenResponse)
@@ -52,7 +60,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
             return TokenResponse(
                 access_token=access_token,
                 token_type="bearer",
-                user=UserResponse.model_validate(existing_email),
+                user=_build_user_response(db, existing_email),
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -76,7 +84,7 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        user=UserResponse.model_validate(user),
+        user=_build_user_response(db, user),
     )
 
 
@@ -116,7 +124,7 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        user=UserResponse.model_validate(user),
+        user=_build_user_response(db, user),
     )
 
 
@@ -213,7 +221,7 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
         return TokenResponse(
             access_token=jwt_token,
             token_type="bearer",
-            user=UserResponse.model_validate(user),
+            user=_build_user_response(db, user),
         )
 
     except requests.RequestException as e:
@@ -229,7 +237,10 @@ def google_login(request: GoogleLoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/refresh", response_model=TokenResponse)
-def refresh_token(current_user: User = Depends(get_current_user)):
+def refresh_token(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Rafraîchir le token d'accès
     """
@@ -239,7 +250,7 @@ def refresh_token(current_user: User = Depends(get_current_user)):
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        user=UserResponse.model_validate(current_user),
+        user=_build_user_response(db, current_user),
     )
 
 
@@ -372,7 +383,7 @@ def google_idtoken_login(request: GoogleTokenRequest, db: Session = Depends(get_
         return TokenResponse(
             access_token=jwt_token,
             token_type="bearer",
-            user=UserResponse.model_validate(user),
+            user=_build_user_response(db, user),
         )
 
     except ValueError as e:

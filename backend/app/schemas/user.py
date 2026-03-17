@@ -53,6 +53,7 @@ class UserResponse(BaseModel):
     scoring: float
     streak: int
     niveau: int
+    rang: int
     created_at: datetime
     is_active: bool
     items: List[UserItemResponse] = []
@@ -69,6 +70,7 @@ class UserPublicResponse(BaseModel):
     scoring: float
     streak: int
     niveau: int
+    rang: int
 
 
 class TokenResponse(BaseModel):
