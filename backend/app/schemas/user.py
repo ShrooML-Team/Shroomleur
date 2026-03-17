@@ -72,6 +72,9 @@ class UserPublicResponse(BaseModel):
     niveau: int
     rang: int
 
+    class Config:
+        from_attributes = True
+
 
 class TokenResponse(BaseModel):
     """Schéma pour la réponse d'authentification"""

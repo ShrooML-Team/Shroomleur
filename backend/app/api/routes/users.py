@@ -37,13 +37,39 @@ def _calculate_user_rank(db: Session, user_score: float) -> int:
 
 
 def _build_user_response(db: Session, user: User) -> UserResponse:
-    user_response = UserResponse.model_validate(user)
-    return user_response.model_copy(update={"rang": _calculate_user_rank(db, user.scoring)})
+    rank = _calculate_user_rank(db, user.scoring)
+    
+    user_data = {
+        'id': user.id,
+        'identifiant': user.identifiant,
+        'email': user.email,
+        'photo_profil': user.photo_profil,
+        'description': user.description,
+        'champignon_prefere': user.champignon_prefere,
+        'scoring': user.scoring,
+        'streak': user.streak,
+        'niveau': user.niveau,
+        'rang': rank,
+        'created_at': user.created_at,
+        'is_active': user.is_active,
+        'items': user.items if hasattr(user, 'items') else []
+    }
+    return UserResponse(**user_data)
 
 
 def _build_user_public_response(db: Session, user: User) -> UserPublicResponse:
-    user_response = UserPublicResponse.model_validate(user)
-    return user_response.model_copy(update={"rang": _calculate_user_rank(db, user.scoring)})
+    rank = _calculate_user_rank(db, user.scoring)
+    
+    user_data = {
+        'id': user.id,
+        'identifiant': user.identifiant,
+        'photo_profil': user.photo_profil,
+        'scoring': user.scoring,
+        'streak': user.streak,
+        'niveau': user.niveau,
+        'rang': rank
+    }
+    return UserPublicResponse(**user_data)
 
 
 def _profile_photo_directory() -> Path:
