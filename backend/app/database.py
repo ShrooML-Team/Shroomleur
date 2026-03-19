@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 from .core.config import settings
@@ -33,3 +33,16 @@ def get_db():
 def init_db():
     """Initialiser la base de données - créer toutes les tables"""
     Base.metadata.create_all(bind=engine)
+
+    # Compatibilité schéma: create_all ne modifie pas les tables existantes.
+    # Si la base existe déjà, on ajoute manuellement la colonne manquante.
+    inspector = inspect(engine)
+    if not inspector.has_table("users"):
+        return
+
+    user_columns = {column["name"] for column in inspector.get_columns("users")}
+    if "description_index" not in user_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE users ADD COLUMN description_index INTEGER DEFAULT 0")
+            )
