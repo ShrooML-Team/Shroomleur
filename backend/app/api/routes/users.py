@@ -44,8 +44,8 @@ def _build_user_response(db: Session, user: User) -> UserResponse:
         'identifiant': user.identifiant,
         'email': user.email,
         'photo_profil': user.photo_profil,
-        'description': user.description,
         'champignon_prefere': user.champignon_prefere,
+        'description_index': user.description_index,
         'scoring': user.scoring,
         'streak': user.streak,
         'niveau': user.niveau,
@@ -64,6 +64,7 @@ def _build_user_public_response(db: Session, user: User) -> UserPublicResponse:
         'id': user.id,
         'identifiant': user.identifiant,
         'photo_profil': user.photo_profil,
+        'description_index': user.description_index,
         'scoring': user.scoring,
         'streak': user.streak,
         'niveau': user.niveau,
@@ -129,7 +130,7 @@ def update_current_user_profile(
     """
     Mettre à jour le profil de l'utilisateur connecté
     
-    Peut mettre à jour: email, description, champignon_prefere, photo_profil, scoring
+    Peut mettre à jour: email, champignon_prefere, photo_profil, scoring
     """
     if user_update.email is not None:
         existing_user = (
@@ -146,11 +147,11 @@ def update_current_user_profile(
 
         current_user.email = user_update.email
 
-    if user_update.description is not None:
-        current_user.description = user_update.description
-
     if user_update.champignon_prefere is not None:
         current_user.champignon_prefere = user_update.champignon_prefere
+
+    if user_update.description_index is not None:
+        current_user.description_index = user_update.description_index
 
     if user_update.photo_profil is not None:
         current_user.photo_profil = user_update.photo_profil

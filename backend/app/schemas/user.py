@@ -20,8 +20,8 @@ class UserLogin(BaseModel):
 class UserUpdate(BaseModel):
     """Schéma pour mettre à jour le profil utilisateur"""
     email: Optional[EmailStr] = None
-    description: Optional[str] = None
     champignon_prefere: Optional[str] = None
+    description_index: Optional[int] = None
     photo_profil: Optional[str] = None
     scoring: Optional[float] = None
 
@@ -48,8 +48,8 @@ class UserResponse(BaseModel):
     identifiant: str
     email: str
     photo_profil: Optional[str]
-    description: Optional[str]
     champignon_prefere: Optional[str]
+    description_index: Optional[int]
     scoring: float
     streak: int
     niveau: int
@@ -67,6 +67,7 @@ class UserPublicResponse(BaseModel):
     id: int
     identifiant: str
     photo_profil: Optional[str]
+    description_index: Optional[int]
     scoring: float
     streak: int
     niveau: int

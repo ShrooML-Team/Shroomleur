@@ -14,8 +14,8 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     mot_de_passe = Column(String(255), nullable=True)  # Nullable pour OAuth-only users
     photo_profil = Column(String(500), nullable=True)
-    description = Column(Text, nullable=True)
     champignon_prefere = Column(String(255), nullable=True)
+    description_index = Column(Integer, default=0, nullable=True)  # Index de la description choisie (0-14)
     
     # Statistiques du joueur
     scoring = Column(Float, default=0.0)
