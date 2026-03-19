@@ -16,9 +16,11 @@ RUN pip install --no-cache-dir -e .
 
 # Copier le code source
 COPY backend/ .
+COPY create_fake_users.py /app/create_fake_users.py
 
 # Préparer le répertoire d'uploads
 RUN mkdir -p /app/uploads/profiles
+RUN chmod +x /app/create_fake_users.py
 
 # Créer un utilisateur non-root
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
