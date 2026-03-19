@@ -8,6 +8,10 @@ import requests
 import json
 import base64
 from datetime import datetime
+import pytest
+
+
+pytestmark = pytest.mark.skip(reason="Script d'integration manuel, non execute dans pytest")
 
 # Configuration
 BASE_URL = "http://localhost:8000"

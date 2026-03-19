@@ -59,8 +59,8 @@ jobs:
                   ALGORITHM: HS256
                   ACCESS_TOKEN_EXPIRE_MINUTES: 30
               run: |
-                  if [ -f pytest.ini ] || [ -d tests ]; then
-                    pytest -v
+                  if find test tests -type f \( -name "test_*.py" -o -name "*_test.py" \) 2>/dev/null | grep -q .; then
+                    pytest -v --cov=app --cov-report=term-missing
                   else
                     echo "Aucun test trouvé, passage des tests"
                   fi
@@ -166,7 +166,8 @@ jobs:
 
         steps:
             - name: Set lowercase repository name
-              run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+              id: repo_lower
+              run: echo "value=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v1
@@ -177,8 +178,8 @@ jobs:
 
                       📦 **Image Docker disponible :**
                       ```bash
-                      docker pull ghcr.io/${{ env.REPO_LOWER }}:${{ github.ref_name }}
-                      docker pull ghcr.io/${{ env.REPO_LOWER }}:latest
+                      docker pull ghcr.io/${{ steps.repo_lower.outputs.value }}:${{ github.ref_name }}
+                      docker pull ghcr.io/${{ steps.repo_lower.outputs.value }}:latest
                       ```
 
                       🔄 **Changements inclus dans cette version :**

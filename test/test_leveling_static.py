@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_ROOT = PROJECT_ROOT / "backend"
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
@@ -33,7 +33,7 @@ def _build_client(tmp_path):
     with TestingSessionLocal() as session:
         user = User(
             identifiant="level_user",
-            email="level@test.local",
+            email="level@example.com",
             mot_de_passe="hash",
             scoring=0,
             niveau=1,
@@ -49,7 +49,7 @@ def _build_client(tmp_path):
         finally:
             db.close()
 
-    def override_get_current_user(db: Session = Depends(override_get_db)):
+    def override_get_current_user(db: Session = Depends(get_db)):
         return db.query(User).filter(User.identifiant == "level_user").first()
 
     app = FastAPI()
