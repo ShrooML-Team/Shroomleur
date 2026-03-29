@@ -67,6 +67,7 @@ class UserPublicResponse(BaseModel):
     id: int
     identifiant: str
     photo_profil: Optional[str]
+    champignon_prefere: Optional[str]
     description_index: Optional[int]
     scoring: float
     streak: int

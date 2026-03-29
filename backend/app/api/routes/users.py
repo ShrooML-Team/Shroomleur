@@ -64,6 +64,7 @@ def _build_user_public_response(db: Session, user: User) -> UserPublicResponse:
         'id': user.id,
         'identifiant': user.identifiant,
         'photo_profil': user.photo_profil,
+        'champignon_prefere': user.champignon_prefere,
         'description_index': user.description_index,
         'scoring': user.scoring,
         'streak': user.streak,
@@ -243,6 +244,31 @@ def download_current_user_profile_photo(
         )
 
     return FileResponse(file_path, filename=file_path.name)
+
+
+@router.get("/top-ranking", response_model=list[UserPublicResponse])
+def get_top_ranking_users(limit: int = 20, db: Session = Depends(get_db)):
+    """
+    Obtenir le classement des meilleurs joueurs triés par score
+    """
+    if limit <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La limite doit être supérieure à 0",
+        )
+    
+    if limit > 100:
+        limit = 100
+
+    top_users = (
+        db.query(User)
+        .filter(User.is_active == True)
+        .order_by(User.scoring.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return [_build_user_public_response(db, user) for user in top_users]
 
 
 @router.get("/{user_id}", response_model=UserPublicResponse)
