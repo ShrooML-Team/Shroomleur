@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ..database import Base
 
@@ -23,8 +23,13 @@ class User(Base):
     niveau = Column(Integer, default=1)
     
     # Métadonnées
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
     is_active = Column(Boolean, default=True)
     
     # OAuth
@@ -52,7 +57,7 @@ class UserItem(Base):
     quantity = Column(Integer, default=1)
     
     # Métadonnées
-    acquired_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    acquired_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relations
     user = relationship("User", back_populates="items")

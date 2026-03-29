@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime
+from datetime import datetime, timezone
 
 from ...core.leveling import calculate_level_from_score
 from ...database import get_db
@@ -38,7 +38,7 @@ def create_identification(
         latitude=history_data.latitude,
         longitude=history_data.longitude,
         notes=history_data.notes,
-        date=datetime.utcnow(),
+        date=datetime.now(timezone.utc),
     )
     db.add(history_entry)
 
