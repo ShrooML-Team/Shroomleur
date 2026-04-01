@@ -341,23 +341,40 @@ def google_idtoken_login(request: GoogleTokenRequest, db: Session = Depends(get_
     - idToken: ID Token du Google Sign-In SDK
     - platform: "android" (défaut)
     """
-    if not settings.GOOGLE_CLIENT_ID_ANDROID:
+    accepted_audiences = []
+    if settings.GOOGLE_CLIENT_ID:
+        accepted_audiences.append(settings.GOOGLE_CLIENT_ID)
+    if settings.GOOGLE_CLIENT_ID_ANDROID:
+        accepted_audiences.append(settings.GOOGLE_CLIENT_ID_ANDROID)
+
+    if not accepted_audiences:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Configuration Google OAuth Android manquante",
+            detail="Configuration Google OAuth manquante (GOOGLE_CLIENT_ID ou GOOGLE_CLIENT_ID_ANDROID)",
         )
 
     try:
-        # Valider l'ID Token avec la clé publique de Google
-        idinfo = id_token.verify_oauth2_token(
-            request.idToken,
-            google_requests.Request(),
-            settings.GOOGLE_CLIENT_ID_ANDROID
-        )
+        # Les ID tokens Android obtenus via requestIdToken portent en audience le client Web.
+        # On accepte donc d'abord le client Web puis le client Android pour compatibilité.
+        idinfo = None
+        last_error = None
+        for audience in accepted_audiences:
+            try:
+                idinfo = id_token.verify_oauth2_token(
+                    request.idToken,
+                    google_requests.Request(),
+                    audience,
+                )
+                break
+            except ValueError as err:
+                last_error = err
+
+        if idinfo is None:
+            raise ValueError(str(last_error) if last_error else "Audience Google invalide")
 
         google_id = idinfo.get("sub")
         email = idinfo.get("email")
-        name = idinfo.get("name", email.split("@")[0])
+        name = idinfo.get("name", email.split("@")[0] if email else "user")
         picture = idinfo.get("picture")
 
         # Chercher l'utilisateur par google_id
